@@ -1,0 +1,25 @@
+
+	proc sort data=data out=vcts (keep=date sku) nodupkey;by date sku;run;
+	data vcts;set vcts;by date;if first.date=1 then dat=1;cum_date+dat;run;
+	data final;set _NULL_;run;
+	%macro comskus(AAA);
+	%do BBB = 1 %TO &AAA;
+		%LET CCC= &BBB + 1;
+	proc sql;create table one as select distinct  sku from vcts where cum_date=&BBB;
+	data one;set one; one=1;run;
+	proc sql;create table two as select distinct  sku from vcts where cum_date=&CCC;
+	data two;set two; two=1;run;
+	data three;merge one two;by  sku;run;
+	data three;set three;if one=1 and two=1 then comm=1;run;
+	proc sql;create table four as select  sum(one) as skus_1, sum(two) as skus_2,sum(comm) as skus_1_2 from three ;
+	data four;set four; seq_date1=&BBB;seq_date2=&CCC;run;
+	data final;set final four;run;
+	%END;
+	%mend;
+	%comskus(258);
+	proc sql;create table five as select  distinct cum_date as seq_date1, date as date1 from vcts  ;
+	proc sql;create table six as select distinct cum_date as seq_date2, date as date2 from vcts;
+	data seven;merge final (in=ordd) five;by seq_date1;if ordd;run;
+	data eight;merge seven (in=ordd) six;by seq_date2;if ordd;drop seq_date1 seq_date2;run;
+	PROC EXPORT DATA = eight outfile ="E:/Honeywell/result.xlsx/"
+	DBMS=xlsx replace ;	sheet="Data" ;	run;

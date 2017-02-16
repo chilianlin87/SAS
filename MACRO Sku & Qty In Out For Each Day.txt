@@ -1,0 +1,32 @@
+	proc sort data=data ;by date ;run;
+	data data;set data;by date;if first.date=1 then dat=1;cum_date+dat;run;
+
+	data final;set _NULL_;run;
+	%macro comskus(AAA);
+	%do BBB = 1 %TO &AAA;
+		%LET CCC= &BBB + 1;
+	data vcts;set data ;where cum_date=&BBB or cum_date=&CCC;keep date sku cum_date unitqty cases;run;
+	proc sql;create table one as select distinct  sku from vcts where cum_date=&BBB;
+	data one;set one; one=1;run;
+	proc sql;create table two as select distinct  sku from vcts where cum_date=&CCC;
+	data two;set two; two=1;run;
+	data three;merge one two;by  sku;run;
+	data three;set three;
+	if one=1 and two=1 then comm=1;
+	if one=1 and two=. then out=1;
+	if one=. and two=1 then in =1;
+	keep sku in out;
+	run;
+	proc sort data=vcts;by sku;run;
+	data vcts_1;merge vcts three;by sku;run;
+	proc sql;create table four as select  (cum_date+1) as seq_date2,count(distinct sku) as out_skus, sum(cases) as outsku_cases, sum(unitqty) as outsku_units from vcts_1 where out=1 group by cum_date;
+	proc sql;create table five as select  cum_date as seq_date2,count(distinct sku) as new_skus, sum(cases) as newsku_cases, sum(unitqty) as newsku_units from vcts_1 where in=1 group by cum_date;
+	data six;merge four five;by seq_date2;run;
+	data final;set final six;run;
+	%END;
+	%mend;
+	%comskus(323);
+	proc sql;create table seven as select cum_date as seq_date2,date, count(distinct sku) as total_skus, sum(cases) as total_cases, sum(unitqty) as total_units from data group by cum_date, date; 
+	data eight;merge seven final;by seq_date2;run;
+	PROC EXPORT DATA = eight outfile ="E:/result.xlsx/"
+	DBMS=xlsx replace ;	sheet="Data" ;	run;

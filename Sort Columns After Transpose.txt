@@ -1,0 +1,29 @@
+	/*We can use transpose change data from long to wide, using tranpose by var id var. But after transpose, the columns names maybe not sorted or in sequence, so we want to sort headers after transpose. Here are 3 solutions.*/
+
+
+
+
+	data two;set two;case=put(cases, z2.);format cases z2.;run;
+	proc transpose data=two out=three name=skus prefix=cases_;by date ;id cases  ;run;
+	/*fix method one*/
+	proc contents data=three out=col_names (keep =name) noprint;run;
+	proc sort data=col_names;by name;run;
+	data sorted_cols;set col_names;
+	by name;
+	retain sorted_cols;
+	length sorted_cols $2500.;
+
+	if _n_ = 1 then sorted_cols = name;
+	else sorted_cols=catx(' ',sorted_cols,   name);
+	call symput('sorted_cols', sorted_cols);
+	run;
+	%put &sorted_cols;
+	data output_sorted; retain &sorted_cols;set three;run;
+	/*fix method two*/
+	proc sql;select name into :sorted_cols separated by ' '
+	from dictionary.columns where libname='WORK' and memname='OUTPUT'
+	order by name;
+	%put &sorted_cols;
+	data output_sorted;retain &sorted_cols;set three;run;
+	/*fix method three*/
+	data four;retain date skus cases_00-cases_33;set three;run;

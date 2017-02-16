@@ -1,0 +1,15 @@
+	/*Inventory turnover days*/
+	/*select the maximum inventory qty and date for each sku, from that day on, see how many days it takes to deplete that much inventory for each sku*/
+
+	proc sort data=vc.inv_by_day out=inv;by sku descending unitqty;run;
+	proc sort data=inv (keep=sku unitqty date) nodupkey;by sku;run;
+	proc sql;create table ord as select sku, unitqty as daily_unit,date1 from vc.whole_year_order order by sku;
+	data one (where=(date1>date));merge inv (in=ordd) ord;by sku;if ordd;run;
+	proc sort data=one;by sku date1;run;
+	data one;set one;by sku;if first.sku=1 then cum_qty=0;cum_qty+daily_unit;run;
+	proc sql;create table two as select sku, unitqty, min(date1) as start_date, max(date1) as end_date,(max(date1)-min(date1)) as cum_days,max(cum_qty) as cum_units from one where cum_qty<unitqty group by sku, unitqty;
+	proc sql;create table three as select sku, max(date1) as last_date,sum(daily_unit) as total_units from one group by sku;
+	data four;merge two three;by sku;format start_date mmddyy10. end_date mmddyy10. last_date mmddyy10. ;run;
+	data four;set four;if total_units>unitqty then group=1;run;
+	PROC EXPORT DATA = four outfile ="E:/Intelligrated/Operations & Solutions/2017 Projects/VictoriaSecret/Analysis/SKU turnover days_ZW.xlsx/"
+	DBMS=xlsx replace ;	sheet="Data" ;	run;
