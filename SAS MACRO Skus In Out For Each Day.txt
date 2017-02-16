@@ -24,5 +24,5 @@
 	proc sql;create table six as select distinct cum_date as seq_date2, date as date2 from vcts;
 	data seven;merge final (in=ordd) five;by seq_date1;if ordd;run;
 	data eight;merge seven (in=ordd) six;by seq_date2;if ordd;drop seq_date1 seq_date2;run;
-	PROC EXPORT DATA = eight outfile ="E:/Honeywell/result.xlsx/"
+	PROC EXPORT DATA = eight outfile ="E:/result.xlsx/"
 	DBMS=xlsx replace ;	sheet="Data" ;	run;
