@@ -4,7 +4,9 @@
 	%macro vendors(AAA);
 	%DO ii=20179 %TO &AAA ;
 	%let kk=&ii + 29;
-	proc sql;create table one as select ADJ_DISPO,count (distinct vendor) as vendors from Ontario_Returns where date >= &ii and date <= &kk group by ADJ_DISPO;
+	proc sql;create table one as select ADJ_DISPO,count (distinct vendor) as vendors 
+	from Ontario_Returns where date >= &ii and date <= &kk group by ADJ_DISPO;
+	
 	proc transpose data=one out=two name=vendors;id adj_dispo;run;
 	data two;set two; start_date=&ii;end_date=&kk;run;
 	data final;set final two;run;
