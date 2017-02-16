@@ -1,6 +1,7 @@
 
 	proc sort data=data out=vcts (keep=date sku) nodupkey;by date sku;run;
 	data vcts;set vcts;by date;if first.date=1 then dat=1;cum_date+dat;run;
+	
 	data final;set _NULL_;run;
 	%macro comskus(AAA);
 	%do BBB = 1 %TO &AAA;
@@ -16,7 +17,9 @@
 	data final;set final four;run;
 	%END;
 	%mend;
+	
 	%comskus(258);
+	
 	proc sql;create table five as select  distinct cum_date as seq_date1, date as date1 from vcts  ;
 	proc sql;create table six as select distinct cum_date as seq_date2, date as date2 from vcts;
 	data seven;merge final (in=ordd) five;by seq_date1;if ordd;run;
