@@ -19,14 +19,19 @@
 	run;
 	proc sort data=vcts;by sku;run;
 	data vcts_1;merge vcts three;by sku;run;
-	proc sql;create table four as select  (cum_date+1) as seq_date2,count(distinct sku) as out_skus, sum(cases) as outsku_cases, sum(unitqty) as outsku_units from vcts_1 where out=1 group by cum_date;
-	proc sql;create table five as select  cum_date as seq_date2,count(distinct sku) as new_skus, sum(cases) as newsku_cases, sum(unitqty) as newsku_units from vcts_1 where in=1 group by cum_date;
+	proc sql;create table four as select  (cum_date+1) as seq_date2,count(distinct sku) as out_skus, sum(cases) as outsku_cases,
+	sum(unitqty) as outsku_units from vcts_1 where out=1 group by cum_date;
+	
+	proc sql;create table five as select  cum_date as seq_date2,count(distinct sku) as new_skus, sum(cases) as newsku_cases,
+	sum(unitqty) as newsku_units from vcts_1 where in=1 group by cum_date;
+	
 	data six;merge four five;by seq_date2;run;
 	data final;set final six;run;
 	%END;
 	%mend;
 	%comskus(323);
-	proc sql;create table seven as select cum_date as seq_date2,date, count(distinct sku) as total_skus, sum(cases) as total_cases, sum(unitqty) as total_units from data group by cum_date, date; 
+	proc sql;create table seven as select cum_date as seq_date2,date, count(distinct sku) as total_skus, sum(cases) as total_cases,
+	sum(unitqty) as total_units from data group by cum_date, date; 
 	data eight;merge seven final;by seq_date2;run;
 	PROC EXPORT DATA = eight outfile ="E:/result.xlsx/"
 	DBMS=xlsx replace ;	sheet="Data" ;	run;
