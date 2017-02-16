@@ -1,0 +1,27 @@
+/*split data into multiple data sets according to unique values of a column,
+each unique value to a separate data set*/
+
+proc sql;
+ select distinct ORIGIN into :valList separated by ';' from SASHELP.CARS;
+quit;
+/* define which libname.member table, and by which column */
+%let TABLE=sashelp.cars;
+%let COLUMN=origin;
+ 
+proc sql ;
+/* build a mini program for each value */
+/* create a table with valid chars from data value */
+select distinct 
+   cat("DATA out_",compress(&COLUMN.,,'kad'),
+   "; set &TABLE.(where=(&COLUMN.='", &COLUMN.,
+   "')); run;") into :allsteps separated by ';' 
+  from &TABLE.;
+quit;
+ 
+/* macro that includes the program we just generated */
+%macro runSteps;
+ &allsteps.;
+%mend;
+ 
+/* and...run the macro when ready */
+%runSteps;
